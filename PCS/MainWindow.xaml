@@ -1,0 +1,90 @@
+<Window x:Class="PCS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Управление библиотекой книг"
+        Width="1200"
+        Height="720"
+        MinWidth="900"
+        MinHeight="600">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0"
+                Padding="10"
+                BorderBrush="#CCCCCC"
+                BorderThickness="1"
+                CornerRadius="6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0"
+                            Margin="0,0,10,0">
+                    <TextBlock Margin="0,0,0,4"
+                               FontWeight="SemiBold"
+                               Text="Поиск по названию" />
+                    <TextBox x:Name="SearchTextBox"
+                             TextChanged="SearchTextBox_OnTextChanged" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Margin="0,0,10,0">
+                    <TextBlock Margin="0,0,0,4"
+                               FontWeight="SemiBold"
+                               Text="Фильтр по автору" />
+                    <ComboBox x:Name="AuthorFilterComboBox"
+                              DisplayMemberPath="Name"
+                              SelectionChanged="FilterComboBox_OnSelectionChanged" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="2">
+                    <TextBlock Margin="0,0,0,4"
+                               FontWeight="SemiBold"
+                               Text="Фильтр по жанру" />
+                    <ComboBox x:Name="GenreFilterComboBox"
+                              DisplayMemberPath="Name"
+                              SelectionChanged="FilterComboBox_OnSelectionChanged" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <WrapPanel Grid.Row="1" Margin="0,10,0,10">
+            <Button Width="130" Margin="0,0,8,0" Click="AddBookButton_OnClick" Content="Добавить книгу" />
+            <Button Width="150" Margin="0,0,8,0" Click="EditBookButton_OnClick" Content="Редактировать книгу" />
+            <Button Width="130" Margin="0,0,8,0" Click="DeleteBookButton_OnClick" Content="Удалить книгу" />
+            <Button Width="140" Margin="0,0,8,0" Click="ManageAuthorsButton_OnClick" Content="Управление авторами" />
+            <Button Width="130" Margin="0,0,8,0" Click="ManageGenresButton_OnClick" Content="Управление жанрами" />
+            <Button Width="90" Click="RefreshButton_OnClick" Content="Обновить" />
+        </WrapPanel>
+
+        <DataGrid x:Name="BooksDataGrid"
+                  Grid.Row="2"
+                  AutoGenerateColumns="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  SelectionUnit="FullRow">
+            <DataGrid.Columns>
+                <DataGridTextColumn Width="3*" Binding="{Binding Title}" Header="Название" />
+                <DataGridTextColumn Width="2*" Binding="{Binding Author.FullName}" Header="Автор" />
+                <DataGridTextColumn Width="2*" Binding="{Binding Genre.Name}" Header="Жанр" />
+                <DataGridTextColumn Width="*" Binding="{Binding PublishYear}" Header="Год" />
+                <DataGridTextColumn Width="2*" Binding="{Binding ISBN}" Header="ISBN" />
+                <DataGridTextColumn Width="*" Binding="{Binding QuantityInStock}" Header="В наличии" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StatusBar Grid.Row="3" Margin="0,10,0,0">
+            <StatusBarItem>
+                <TextBlock x:Name="SummaryTextBlock" />
+            </StatusBarItem>
+        </StatusBar>
+    </Grid>
+</Window>
