@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using Microsoft.EntityFrameworkCore;
 using PCS.Data;
@@ -39,8 +39,8 @@ public partial class MainWindow : Window
 
         _allBooks = dbContext.Books
             .AsNoTracking()
-            .Include(book => book.Author)
-            .Include(book => book.Genre)
+            .Include(book => book.Authors)
+            .Include(book => book.Genres)
             .OrderBy(book => book.Title)
             .ToList();
 
@@ -78,12 +78,12 @@ public partial class MainWindow : Window
 
         if ((AuthorFilterComboBox.SelectedItem as FilterItem)?.Id is int authorId)
         {
-            filteredQuery = filteredQuery.Where(book => book.AuthorId == authorId);
+            filteredQuery = filteredQuery.Where(book => book.Authors.Any(author => author.Id == authorId));
         }
 
         if ((GenreFilterComboBox.SelectedItem as FilterItem)?.Id is int genreId)
         {
-            filteredQuery = filteredQuery.Where(book => book.GenreId == genreId);
+            filteredQuery = filteredQuery.Where(book => book.Genres.Any(genre => genre.Id == genreId));
         }
 
         var filteredBooks = filteredQuery.ToList();
@@ -196,3 +196,4 @@ public partial class MainWindow : Window
 
     private sealed record FilterItem(int? Id, string Name);
 }
+

@@ -1,4 +1,6 @@
-using System.Windows;
+﻿using System.Windows;
+using System.Windows.Controls;
+using Microsoft.EntityFrameworkCore;
 using PCS.Data;
 using PCS.Models;
 
@@ -30,8 +32,8 @@ public partial class BookEditWindow : Window
             .OrderBy(genre => genre.Name)
             .ToList();
 
-        AuthorComboBox.ItemsSource = authors;
-        GenreComboBox.ItemsSource = genres;
+        AuthorsListBox.ItemsSource = authors;
+        GenresListBox.ItemsSource = genres;
 
         if (authors.Count == 0 || genres.Count == 0)
         {
@@ -47,7 +49,11 @@ public partial class BookEditWindow : Window
 
         if (_bookId.HasValue)
         {
-            var book = dbContext.Books.FirstOrDefault(entity => entity.Id == _bookId.Value);
+            var book = dbContext.Books
+                .Include(entity => entity.Authors)
+                .Include(entity => entity.Genres)
+                .FirstOrDefault(entity => entity.Id == _bookId.Value);
+
             if (book is null)
             {
                 MessageBox.Show(
@@ -63,15 +69,37 @@ public partial class BookEditWindow : Window
             PublishYearTextBox.Text = book.PublishYear.ToString();
             IsbnTextBox.Text = book.ISBN;
             QuantityTextBox.Text = book.QuantityInStock.ToString();
-            AuthorComboBox.SelectedValue = book.AuthorId;
-            GenreComboBox.SelectedValue = book.GenreId;
+
+            SelectItemsByIds(AuthorsListBox, book.Authors.Select(author => author.Id).ToHashSet());
+            SelectItemsByIds(GenresListBox, book.Genres.Select(genre => genre.Id).ToHashSet());
             return;
         }
 
         PublishYearTextBox.Text = DateTime.Now.Year.ToString();
         QuantityTextBox.Text = "1";
-        AuthorComboBox.SelectedIndex = 0;
-        GenreComboBox.SelectedIndex = 0;
+
+        AuthorsListBox.SelectedIndex = 0;
+        GenresListBox.SelectedIndex = 0;
+    }
+
+    private static void SelectItemsByIds(ListBox listBox, HashSet<int> selectedIds)
+    {
+        listBox.SelectedItems.Clear();
+
+        foreach (var item in listBox.Items)
+        {
+            var id = item switch
+            {
+                Author author => author.Id,
+                Genre genre => genre.Id,
+                _ => 0
+            };
+
+            if (selectedIds.Contains(id))
+            {
+                listBox.SelectedItems.Add(item);
+            }
+        }
     }
 
     private void SaveButton_OnClick(object sender, RoutedEventArgs e)
@@ -79,10 +107,10 @@ public partial class BookEditWindow : Window
         if (!TryReadInput(
                 out var title,
                 out var publishYear,
-                out var isbn,
+                out var normalizedIsbn,
                 out var quantityInStock,
-                out var authorId,
-                out var genreId))
+                out var selectedAuthorIds,
+                out var selectedGenreIds))
         {
             return;
         }
@@ -92,7 +120,11 @@ public partial class BookEditWindow : Window
         Book bookEntity;
         if (_bookId.HasValue)
         {
-            var existingBook = dbContext.Books.FirstOrDefault(entity => entity.Id == _bookId.Value);
+            var existingBook = dbContext.Books
+                .Include(book => book.Authors)
+                .Include(book => book.Genres)
+                .FirstOrDefault(entity => entity.Id == _bookId.Value);
+
             if (existingBook is null)
             {
                 MessageBox.Show(
@@ -111,17 +143,33 @@ public partial class BookEditWindow : Window
             dbContext.Books.Add(bookEntity);
         }
 
+        var selectedAuthors = dbContext.Authors
+            .Where(author => selectedAuthorIds.Contains(author.Id))
+            .ToList();
+
+        var selectedGenres = dbContext.Genres
+            .Where(genre => selectedGenreIds.Contains(genre.Id))
+            .ToList();
+
         bookEntity.Title = title;
         bookEntity.PublishYear = publishYear;
-        bookEntity.ISBN = isbn;
+        bookEntity.ISBN = normalizedIsbn;
         bookEntity.QuantityInStock = quantityInStock;
-        bookEntity.AuthorId = authorId;
-        bookEntity.GenreId = genreId;
+        bookEntity.Authors = selectedAuthors;
+        bookEntity.Genres = selectedGenres;
 
         try
         {
             dbContext.SaveChanges();
             DialogResult = true;
+        }
+        catch (DbUpdateException)
+        {
+            MessageBox.Show(
+                "Не удалось сохранить книгу. Убедитесь, что ISBN уникален.",
+                "Ошибка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
         catch (Exception exception)
         {
@@ -136,17 +184,17 @@ public partial class BookEditWindow : Window
     private bool TryReadInput(
         out string title,
         out int publishYear,
-        out string isbn,
+        out string normalizedIsbn,
         out int quantityInStock,
-        out int authorId,
-        out int genreId)
+        out List<int> authorIds,
+        out List<int> genreIds)
     {
         title = TitleTextBox.Text.Trim();
-        isbn = IsbnTextBox.Text.Trim();
         publishYear = 0;
+        normalizedIsbn = string.Empty;
         quantityInStock = 0;
-        authorId = 0;
-        genreId = 0;
+        authorIds = [];
+        genreIds = [];
 
         if (string.IsNullOrWhiteSpace(title))
         {
@@ -171,9 +219,14 @@ public partial class BookEditWindow : Window
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(isbn))
+        var rawIsbn = IsbnTextBox.Text.Trim();
+        if (!TryNormalizeAndValidateIsbn(rawIsbn, out normalizedIsbn))
         {
-            MessageBox.Show("Введите ISBN.", "Валидация", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                "Введите корректный ISBN-10 или ISBN-13 (можно с дефисами и пробелами).",
+                "Валидация",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return false;
         }
 
@@ -187,21 +240,93 @@ public partial class BookEditWindow : Window
             return false;
         }
 
-        if (AuthorComboBox.SelectedValue is not int selectedAuthorId)
+        authorIds = AuthorsListBox.SelectedItems
+            .OfType<Author>()
+            .Select(author => author.Id)
+            .Distinct()
+            .ToList();
+
+        if (authorIds.Count == 0)
         {
-            MessageBox.Show("Выберите автора.", "Валидация", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Выберите хотя бы одного автора.", "Валидация", MessageBoxButton.OK, MessageBoxImage.Information);
             return false;
         }
 
-        if (GenreComboBox.SelectedValue is not int selectedGenreId)
+        genreIds = GenresListBox.SelectedItems
+            .OfType<Genre>()
+            .Select(genre => genre.Id)
+            .Distinct()
+            .ToList();
+
+        if (genreIds.Count == 0)
         {
-            MessageBox.Show("Выберите жанр.", "Валидация", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Выберите хотя бы один жанр.", "Валидация", MessageBoxButton.OK, MessageBoxImage.Information);
             return false;
         }
 
-        authorId = selectedAuthorId;
-        genreId = selectedGenreId;
         return true;
+    }
+
+    private static bool TryNormalizeAndValidateIsbn(string rawIsbn, out string normalizedIsbn)
+    {
+        normalizedIsbn = string.Concat(rawIsbn
+            .Where(character => !char.IsWhiteSpace(character) && character != '-'))
+            .ToUpperInvariant();
+
+        if (normalizedIsbn.Length == 10)
+        {
+            return IsValidIsbn10(normalizedIsbn);
+        }
+
+        if (normalizedIsbn.Length == 13)
+        {
+            return IsValidIsbn13(normalizedIsbn);
+        }
+
+        return false;
+    }
+
+    private static bool IsValidIsbn10(string isbn)
+    {
+        if (!isbn.Take(9).All(char.IsDigit))
+        {
+            return false;
+        }
+
+        var lastCharacter = isbn[9];
+        if (!char.IsDigit(lastCharacter) && lastCharacter != 'X')
+        {
+            return false;
+        }
+
+        var sum = 0;
+        for (var i = 0; i < 9; i++)
+        {
+            sum += (i + 1) * (isbn[i] - '0');
+        }
+
+        sum += 10 * (lastCharacter == 'X' ? 10 : lastCharacter - '0');
+        return sum % 11 == 0;
+    }
+
+    private static bool IsValidIsbn13(string isbn)
+    {
+        if (!isbn.All(char.IsDigit))
+        {
+            return false;
+        }
+
+        var sum = 0;
+        for (var i = 0; i < 12; i++)
+        {
+            var digit = isbn[i] - '0';
+            sum += i % 2 == 0 ? digit : digit * 3;
+        }
+
+        var expectedCheckDigit = (10 - (sum % 10)) % 10;
+        var actualCheckDigit = isbn[12] - '0';
+
+        return expectedCheckDigit == actualCheckDigit;
     }
 
     private void CancelButton_OnClick(object sender, RoutedEventArgs e)
@@ -209,3 +334,7 @@ public partial class BookEditWindow : Window
         DialogResult = false;
     }
 }
+
+
+
+

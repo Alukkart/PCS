@@ -1,4 +1,4 @@
-namespace PCS.Models;
+﻿namespace PCS.Models;
 
 public class Author
 {
@@ -12,3 +12,4 @@ public class Author
 
     public string FullName => $"{FirstName} {LastName}";
 }
+

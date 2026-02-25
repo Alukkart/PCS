@@ -1,4 +1,4 @@
-namespace PCS.Models;
+﻿namespace PCS.Models;
 
 public class Genre
 {
@@ -8,3 +8,4 @@ public class Genre
 
     public ICollection<Book> Books { get; set; } = new List<Book>();
 }
+

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using PCS.Models;
 
 namespace PCS.Data;
@@ -57,7 +57,7 @@ public class LibraryDbContext : DbContext
 
             entity.Property(book => book.ISBN)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasMaxLength(13);
 
             entity.Property(book => book.PublishYear)
                 .IsRequired();
@@ -68,21 +68,30 @@ public class LibraryDbContext : DbContext
             entity.HasIndex(book => book.ISBN)
                 .IsUnique();
 
-            entity.HasOne(book => book.Author)
-                .WithMany(author => author.Books)
-                .HasForeignKey(book => book.AuthorId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            entity.HasOne(book => book.Genre)
-                .WithMany(genre => genre.Books)
-                .HasForeignKey(book => book.GenreId)
-                .OnDelete(DeleteBehavior.Cascade);
-
             entity.ToTable(table =>
             {
                 table.HasCheckConstraint("CK_Books_QuantityInStock", "\"QuantityInStock\" >= 0");
                 table.HasCheckConstraint("CK_Books_PublishYear", "\"PublishYear\" >= 1450");
             });
         });
+
+        modelBuilder.Entity<Book>()
+            .HasMany(book => book.Authors)
+            .WithMany(author => author.Books)
+            .UsingEntity<Dictionary<string, object>>(
+                "BookAuthor",
+                right => right.HasOne<Author>().WithMany().HasForeignKey("AuthorId").OnDelete(DeleteBehavior.Cascade),
+                left => left.HasOne<Book>().WithMany().HasForeignKey("BookId").OnDelete(DeleteBehavior.Cascade),
+                join => join.HasKey("BookId", "AuthorId"));
+
+        modelBuilder.Entity<Book>()
+            .HasMany(book => book.Genres)
+            .WithMany(genre => genre.Books)
+            .UsingEntity<Dictionary<string, object>>(
+                "BookGenre",
+                right => right.HasOne<Genre>().WithMany().HasForeignKey("GenreId").OnDelete(DeleteBehavior.Cascade),
+                left => left.HasOne<Book>().WithMany().HasForeignKey("BookId").OnDelete(DeleteBehavior.Cascade),
+                join => join.HasKey("BookId", "GenreId"));
     }
 }
+

@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using PCS.Data;
 using PCS.Models;
@@ -86,7 +86,7 @@ public partial class GenreManagementWindow : Window
             if (existingGenre is null)
             {
                 MessageBox.Show(
-                    "Жанр не найден. Возможно, он был удалён.",
+                    "Жанр не найден. Возможно, он был удален.",
                     "Ошибка",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
@@ -118,7 +118,7 @@ public partial class GenreManagementWindow : Window
         }
 
         var result = MessageBox.Show(
-            $"Удалить жанр \"{selectedGenre.Name}\"?\nЭто удалит и все связанные книги.",
+            $"Удалить жанр \"{selectedGenre.Name}\"?\nКниги не будут удалены, но связь с этим жанром будет снята.",
             "Подтверждение удаления",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -155,3 +155,4 @@ public partial class GenreManagementWindow : Window
         NameTextBox.Focus();
     }
 }
+

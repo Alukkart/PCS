@@ -1,11 +1,11 @@
-<Window x:Class="PCS.Windows.BookEditWindow"
+﻿<Window x:Class="PCS.Windows.BookEditWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Книга"
-        Width="500"
-        Height="450"
-        MinWidth="450"
-        MinHeight="420"
+        Width="560"
+        Height="520"
+        MinWidth="520"
+        MinHeight="480"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner">
     <Grid Margin="14">
@@ -15,8 +15,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
@@ -40,31 +40,37 @@
             </StackPanel>
         </Grid>
 
-        <TextBlock Grid.Row="3" Margin="0,0,0,4" FontWeight="SemiBold" Text="ISBN" />
+        <TextBlock Grid.Row="3" Margin="0,0,0,4" FontWeight="SemiBold" Text="ISBN-10 или ISBN-13" />
         <TextBox x:Name="IsbnTextBox" Grid.Row="4" Margin="0,0,0,10" />
 
-        <Grid Grid.Row="5">
+        <Grid Grid.Row="5" Margin="0,0,0,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Margin="0,0,6,0">
-                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Автор" />
-                <ComboBox x:Name="AuthorComboBox" DisplayMemberPath="FullName" SelectedValuePath="Id" />
+                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Авторы" />
+                <ListBox x:Name="AuthorsListBox"
+                         DisplayMemberPath="FullName"
+                         Height="160"
+                         SelectionMode="Extended" />
             </StackPanel>
 
             <StackPanel Grid.Column="1" Margin="6,0,0,0">
-                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Жанр" />
-                <ComboBox x:Name="GenreComboBox" DisplayMemberPath="Name" SelectedValuePath="Id" />
+                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Жанры" />
+                <ListBox x:Name="GenresListBox"
+                         DisplayMemberPath="Name"
+                         Height="160"
+                         SelectionMode="Extended" />
             </StackPanel>
         </Grid>
 
         <TextBlock Grid.Row="6"
-                   Margin="0,12,0,0"
+                   Margin="0,8,0,0"
                    VerticalAlignment="Top"
                    Foreground="#666666"
-                   Text="Для сохранения книги должны быть созданы хотя бы один автор и один жанр." />
+                   Text="Выберите минимум одного автора и один жанр. Для мультивыбора используйте Ctrl или Shift." />
 
         <StackPanel Grid.Row="7"
                     Margin="0,12,0,0"
@@ -75,3 +81,4 @@
         </StackPanel>
     </Grid>
 </Window>
+

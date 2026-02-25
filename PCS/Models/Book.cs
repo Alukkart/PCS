@@ -1,4 +1,4 @@
-namespace PCS.Models;
+﻿namespace PCS.Models;
 
 public class Book
 {
@@ -8,9 +8,16 @@ public class Book
     public string ISBN { get; set; } = string.Empty;
     public int QuantityInStock { get; set; }
 
-    public int AuthorId { get; set; }
-    public Author Author { get; set; } = null!;
+    public ICollection<Author> Authors { get; set; } = new List<Author>();
+    public ICollection<Genre> Genres { get; set; } = new List<Genre>();
 
-    public int GenreId { get; set; }
-    public Genre Genre { get; set; } = null!;
+    public string AuthorNames => string.Join(", ", Authors
+        .OrderBy(author => author.LastName)
+        .ThenBy(author => author.FirstName)
+        .Select(author => author.FullName));
+
+    public string GenreNames => string.Join(", ", Genres
+        .OrderBy(genre => genre.Name)
+        .Select(genre => genre.Name));
 }
+
