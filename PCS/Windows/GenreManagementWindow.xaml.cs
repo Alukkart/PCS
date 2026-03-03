@@ -79,6 +79,21 @@ public partial class GenreManagementWindow : Window
 
         using var dbContext = LibraryDbContextFactory.Create();
 
+        var normalizedName = name.ToUpperInvariant();
+        var duplicateExists = dbContext.Genres.Any(genre =>
+            genre.Id != _editingGenreId &&
+            genre.Name.ToUpper() == normalizedName);
+
+        if (duplicateExists)
+        {
+            MessageBox.Show(
+                "Жанр с таким названием уже существует (без учета регистра).",
+                "Валидация",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
         Genre genreEntity;
         if (_editingGenreId.HasValue)
         {
@@ -105,8 +120,19 @@ public partial class GenreManagementWindow : Window
         genreEntity.Name = name;
         genreEntity.Description = string.IsNullOrWhiteSpace(description) ? null : description;
 
-        dbContext.SaveChanges();
-        LoadGenres(genreEntity.Id);
+        try
+        {
+            dbContext.SaveChanges();
+            LoadGenres(genreEntity.Id);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                $"Не удалось сохранить жанр.\n{exception.Message}",
+                "Ошибка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private void DeleteButton_OnClick(object sender, RoutedEventArgs e)

@@ -73,7 +73,14 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(searchText))
         {
             filteredQuery = filteredQuery.Where(book =>
-                book.Title.Contains(searchText, StringComparison.CurrentCultureIgnoreCase));
+                book.Title.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ||
+                book.ISBN.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ||
+                book.Authors.Any(author =>
+                    author.FirstName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ||
+                    author.LastName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase) ||
+                    author.FullName.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)) ||
+                book.Genres.Any(genre =>
+                    genre.Name.Contains(searchText, StringComparison.CurrentCultureIgnoreCase)));
         }
 
         if ((AuthorFilterComboBox.SelectedItem as FilterItem)?.Id is int authorId)

@@ -19,6 +19,7 @@ public static class LibraryDbContextFactory
         dbContext.Database.EnsureCreated();
 
         MigrateLegacyBookRelations(dbContext);
+        EnsureCaseInsensitiveUniqueIndexes(dbContext);
         SeedBaseData(dbContext);
     }
 
@@ -204,5 +205,20 @@ public static class LibraryDbContextFactory
 
         dbContext.Books.AddRange(warAndPeace, crimeAndPunishment, goodOmens);
         dbContext.SaveChanges();
+    }
+
+    private static void EnsureCaseInsensitiveUniqueIndexes(LibraryDbContext dbContext)
+    {
+        dbContext.Database.ExecuteSqlRaw(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Genres_Name_NoCase"
+            ON "Genres" ("Name" COLLATE NOCASE);
+            """);
+
+        dbContext.Database.ExecuteSqlRaw(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_Authors_FirstName_LastName_NoCase"
+            ON "Authors" ("FirstName" COLLATE NOCASE, "LastName" COLLATE NOCASE);
+            """);
     }
 }

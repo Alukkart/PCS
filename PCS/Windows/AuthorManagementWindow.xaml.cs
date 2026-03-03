@@ -102,6 +102,23 @@ public partial class AuthorManagementWindow : Window
 
         using var dbContext = LibraryDbContextFactory.Create();
 
+        var normalizedFirstName = firstName.ToUpperInvariant();
+        var normalizedLastName = lastName.ToUpperInvariant();
+        var duplicateExists = dbContext.Authors.Any(author =>
+            author.Id != _editingAuthorId &&
+            author.FirstName.ToUpper() == normalizedFirstName &&
+            author.LastName.ToUpper() == normalizedLastName);
+
+        if (duplicateExists)
+        {
+            MessageBox.Show(
+                "Автор с такими именем и фамилией уже существует (без учета регистра).",
+                "Валидация",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
         Author authorEntity;
         if (_editingAuthorId.HasValue)
         {
@@ -130,8 +147,19 @@ public partial class AuthorManagementWindow : Window
         authorEntity.BirthDate = birthDate.Value;
         authorEntity.Country = country;
 
-        dbContext.SaveChanges();
-        LoadAuthors(authorEntity.Id);
+        try
+        {
+            dbContext.SaveChanges();
+            LoadAuthors(authorEntity.Id);
+        }
+        catch (Exception exception)
+        {
+            MessageBox.Show(
+                $"Не удалось сохранить автора.\n{exception.Message}",
+                "Ошибка",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private void DeleteButton_OnClick(object sender, RoutedEventArgs e)
